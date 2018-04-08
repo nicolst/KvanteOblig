@@ -19,7 +19,7 @@ class Partikkel:
 
         self.Ntot = len(V)
 
-        self.d = np.array([v + hbar ** 2 / (m * dx ** 2) for v in V])
+        self.d = np.array([(v + hbar ** 2 / (m * dx ** 2)) for v in V])
         self.e = -hbar ** 2 / (2 * m * dx ** 2)
 
         energy, psi_matrix = la.eigh_tridiagonal(self.d, np.array([self.e] * (self.Ntot - 1)))
@@ -40,14 +40,15 @@ class Partikkel:
             print("Dotting: {0} out of {1}".format(n + 1, self.Ntot))
             self.c[n] = np.vdot(self.psi_matrix_complex[:, n], self.Psi0)
 
-    def calculate(self, max_t, steps):
-        self.t_space = np.linspace(0, max_t, steps)
+    def calculate(self, time_step, steps):
+        self.t_space = np.asarray([time_step*i for i in range(steps)])
 
         # Analytisk usikkerhet
         self.analytical_uncertainty = np.sqrt(self.sigma ** 2 + hbar ** 2 * self.t_space ** 2 / (4 * self.m ** 2 * self.sigma ** 2))
 
         # Numerisk usikkerhet
         self.numerical_uncertainty = []
+        self.Psi_ts = []
         self.rho_ts = []
         for i in range(len(self.t_space)):
             t = self.t_space[i]
@@ -57,12 +58,17 @@ class Partikkel:
                 Psi_t = Psi_t + self.c[n] * self.psi_matrix_complex[:, n] * np.exp(-1j * self.energy[n] * t / hbar)
 
             rho_t = np.abs(Psi_t) ** 2
+            self.Psi_ts.append(Psi_t)
             self.rho_ts.append(rho_t)
             x2mean = self.dx * np.dot(self.x ** 2, rho_t)
             xmean2 = (self.dx * np.dot(self.x, rho_t)) ** 2
             deltax = np.sqrt(x2mean - xmean2)
 
             self.numerical_uncertainty.append(deltax)
+
+        self.Psi_ts = np.asarray(self.Psi_ts)
+        self.rho_ts = np.asarray(self.rho_ts)
+        self.numerical_uncertainty = np.asarray(self.numerical_uncertainty)
 
 
 
