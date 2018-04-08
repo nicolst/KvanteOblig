@@ -1,6 +1,7 @@
 import partikkel
 import matplotlib.pyplot as plt
 import numpy as np
+from scipy.fftpack import fftshift
 
 m_e = 9.11E-31
 hbar = 1.055E-34
@@ -16,33 +17,28 @@ p1.calculate(time_step, 900)
 plt.figure(1)
 plt.title(r"Usikkerhet i posisjon")
 plt.xlabel(r"$x$ / (m)", fontsize=20)
-plt.ylabel(r"$\Delta x$ / m", rotation=0, fontsize=20)
+plt.ylabel(r"$\Delta x$ / m", fontsize=20)
 plt.plot(p1.t_space, p1.numerical_uncertainty, 'k-', label="Usikkerhet")
 #plt.plot(p1.t_space, p1.analytical_uncertainty, 'k--', label="Analytisk")
 plt.legend()
-plt.show()
 
-# Usikkerhet i impuls
-Psi_t_behind = hbar/1j * p1.Psi_ts
-Psi_t_ahead = np.asarray([0] + list(Psi_t_behind[:-1]))
-Psi_t_diff = (Psi_t_ahead - Psi_t_behind)/time_step
+Psi_ks = np.asarray([fftshift(psi) for psi in p1.Psi_ts])
+Psi_ps = Psi_ks * hbar
+rho_p = np.abs(Psi_ps)**2
 
-Psi_t_behind_2 = hbar/1j * Psi_t_diff
-Psi_t_ahead_2 = np.asarray([0] + list(Psi_t_behind_2[:-1]))
-Psi_t_diff_2 = (Psi_t_ahead_2 - Psi_t_behind_2)/time_step
+deltaps = []
 
-rho_impulser = np.vdot(p1.psi_matrix_complex, Psi_t_diff)
-rho_impulser_2 = np.vdot(p1.psi_matrix_complex, Psi_t_diff_2)
-
-p2mean_m = dx * rho_impulser_2
-pmean2_m = (dx * rho_impulser)**2
-deltap = p2mean_m - pmean2_m
+for i in range(900):
+    p2mean_m = rho_p*k0
+    pmean2_m = (rho_p*k0)**2
+    deltap = p2mean_m - pmean2_m
+    deltaps.append(deltap)
 
 plt.figure(2)
 plt.title(r"Usikkerhet i impuls")
 plt.xlabel(r"$p$ / (kg m / s)", fontsize=20)
-plt.ylabel(r"$\Delta p$ / (kg m / s)", rotation=0, fontsize=20)
-plt.plot(p1.t_space, p1.numerical_uncertainty, 'k-', label="Usikkerhet")
+plt.ylabel(r"$\Delta p$ / (kg m / s)", fontsize=20)
+plt.plot(p1.t_space, deltaps, 'k-', label="Usikkerhet")
 #plt.plot(p1.t_space, p1.analytical_uncertainty, 'k--', label="Analytisk")
 plt.legend()
 plt.show()
